@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAPE Ventures — X Command Center</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #faf7f2; color: #1a1208; min-height: 100vh; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #faf7f2; }
+  ::-webkit-scrollbar-thumb { background: #d8c8a8; border-radius: 2px; }
+
+  nav {
+    background: #1a1208;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-left { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #3a2a10; transition: all 0.3s; }
+  .dot.active { background: #c8953a; box-shadow: 0 0 12px #c8953a; animation: glow 2s infinite; }
+  .brand { font-size: 13px; color: #c8953a; letter-spacing: 3px; font-family: 'Courier New', monospace; }
+  .subbrand { font-size: 11px; color: #5a4a30; letter-spacing: 2px; font-family: 'Courier New', monospace; }
+  .nav-right { display: flex; gap: 20px; align-items: center; }
+  .nav-link { font-size: 11px; color: #5a4a30; text-decoration: none; font-family: 'Courier New', monospace; }
+  .nav-link.gold { color: #c8953a; }
+
+  .main { max-width: 980px; margin: 0 auto; padding: 32px 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+  @media(max-width: 768px) { .main { grid-template-columns: 1fr; } }
+
+  .card { background: #fff; border-radius: 16px; border: 1px solid #e8dcc8; overflow: hidden; }
+  .card-dark { background: #1a1208; border-radius: 16px; overflow: hidden; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid #f0e8d8; display: flex; align-items: center; justify-content: space-between; }
+  .card-label { font-size: 10px; color: #8a7a5a; letter-spacing: 2px; font-family: 'Courier New', monospace; }
+  .card-dark-header { padding: 14px 20px; border-bottom: 1px solid #2a1e0a; }
+  .card-dark-label { font-size: 10px; color: #5a4a30; letter-spacing: 2px; font-family: 'Courier New', monospace; }
+
+  /* Stats hero */
+  .stats-hero { background: #1a1208; border-radius: 20px; padding: 32px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .stats-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 80% 20%, rgba(200,149,58,0.12) 0%, transparent 60%); pointer-events: none; }
+  .stats-row { display: flex; gap: 32px; margin-bottom: 28px; }
+  .stat-val { font-size: 42px; font-weight: bold; line-height: 1; margin-bottom: 3px; }
+  .stat-label { font-size: 9px; letter-spacing: 2px; font-family: 'Courier New', monospace; color: #3a2a10; }
+  .btn-row { display: flex; gap: 10px; }
+
+  .btn-primary {
+    flex: 2; padding: 15px 20px;
+    background: linear-gradient(135deg, #c8953a, #b07828);
+    border: none; border-radius: 12px;
+    color: #1a1208; font-size: 14px; font-weight: bold;
+    cursor: pointer; font-family: Georgia, serif;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:disabled { background: #2a1e0a; color: #5a4a30; cursor: not-allowed; transform: none; }
+
+  .btn-auto {
+    flex: 1; padding: 15px 16px;
+    background: transparent;
+    border: 2px solid rgba(200,149,58,0.2);
+    border-radius: 12px; color: #c8953a;
+    font-size: 12px; font-weight: bold;
+    cursor: pointer; font-family: Georgia, serif;
+    transition: all 0.2s;
+  }
+  .btn-auto.on { background: rgba(200,149,58,0.1); border-color: rgba(200,149,58,0.4); }
+  .btn-auto:hover { border-color: rgba(200,149,58,0.5); }
+
+  /* Post preview */
+  .post-preview { padding: 22px; }
+  .post-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .post-agent { font-size: 11px; color: #c8953a; letter-spacing: 2px; font-family: 'Courier New', monospace; font-weight: bold; }
+  .post-time { font-size: 9px; color: #b8a888; font-family: 'Courier New', monospace; }
+  .post-badge { font-size: 9px; padding: 3px 10px; border-radius: 20px; font-family: 'Courier New', monospace; letter-spacing: 1px; margin-left: auto; }
+  .post-badge.ready { background: #f0e8d8; color: #8a7a5a; border: 1px solid #d8c8a8; }
+  .post-badge.sent { background: rgba(200,149,58,0.1); color: #c8953a; border: 1px solid rgba(200,149,58,0.3); }
+  .post-content { font-size: 15px; line-height: 1.9; color: #2a1e0a; white-space: pre-wrap; padding: 14px 16px; background: #fdf9f3; border-radius: 10px; border: 1px solid #f0e8d8; margin-bottom: 14px; }
+  .post-actions { display: flex; gap: 8px; }
+
+  .btn-send { flex: 2; padding: 10px; background: #c8953a; border: none; border-radius: 10px; color: #fff; font-size: 13px; font-weight: bold; cursor: pointer; font-family: Georgia, serif; }
+  .btn-send:disabled { background: #f0e8d8; color: #8a7a5a; cursor: wait; }
+  .btn-copy { flex: 1; padding: 10px; background: #f8f4ee; border: 1px solid #e8dcc8; border-radius: 10px; color: #5a4a30; font-size: 12px; cursor: pointer; font-family: Georgia, serif; }
+  .btn-copy.copied { background: rgba(200,149,58,0.1); border-color: rgba(200,149,58,0.3); color: #c8953a; }
+  .btn-xpost { flex: 1; padding: 10px; background: #f8f4ee; border: 1px solid #e8dcc8; border-radius: 10px; color: #5a4a30; font-size: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; }
+
+  /* Log */
+  .log-wrap { height: 200px; overflow-y: auto; padding: 12px 18px; }
+  .log-empty { text-align: center; padding: 40px 0; font-size: 12px; color: #d8c8a8; }
+  .log-row { display: flex; gap: 10px; margin-bottom: 6px; align-items: flex-start; }
+  .log-time { font-size: 9px; color: #d8c8a8; flex-shrink: 0; padding-top: 2px; font-family: 'Courier New', monospace; }
+  .log-msg { font-size: 11px; line-height: 1.6; }
+  .log-agent { color: #c8953a; }
+  .log-success { color: #2DC653; }
+  .log-error { color: #ef4444; }
+  .log-system { color: #8338EC; }
+
+  /* History */
+  .history-wrap { max-height: 280px; overflow-y: auto; }
+  .history-row { padding: 12px 18px; border-bottom: 1px solid #f8f4ee; cursor: pointer; display: flex; gap: 10px; align-items: flex-start; transition: background 0.1s; }
+  .history-row:hover { background: #fdf9f3; }
+  .history-row.active { background: #fdf9f3; }
+  .history-emoji { font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+  .history-name { font-size: 10px; color: #c8953a; font-family: 'Courier New', monospace; font-weight: bold; }
+  .history-t { font-size: 9px; color: #d8c8a8; font-family: 'Courier New', monospace; }
+  .history-excerpt { font-size: 11px; color: #5a4a30; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+  /* Sidebar */
+  .pipeline-step { display: flex; align-items: center; gap: 10px; }
+  .pipeline-icon { width: 28px; height: 28px; border-radius: 8px; background: #fdf9f3; border: 1px solid #e8dcc8; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .pipeline-line { width: 1px; height: 16px; background: #e8dcc8; margin: 2px 0 2px 13px; }
+  .pipeline-title { font-size: 11px; font-weight: bold; color: #2a1e0a; margin-bottom: 1px; }
+  .pipeline-sub { font-size: 9px; color: #b8a888; font-family: 'Courier New', monospace; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #2DC653; box-shadow: 0 0 5px rgba(45,198,83,0.4); margin-left: auto; flex-shrink: 0; }
+
+  .agent-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; background: #fdf9f3; }
+  .agent-dot { width: 6px; height: 6px; border-radius: 50%; background: #d8c8a8; margin-left: auto; transition: all 0.3s; }
+  .agent-dot.active { background: #c8953a; box-shadow: 0 0 5px rgba(200,149,58,0.5); }
+
+  .quick-link { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #2a1e0a; text-decoration: none; color: #8a7a5a; font-size: 12px; transition: color 0.1s; }
+  .quick-link:last-child { border-bottom: none; }
+  .quick-link:hover { color: #c8953a; }
+  .quick-arrow { margin-left: auto; color: #3a2a10; font-size: 11px; }
+
+  @keyframes glow { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="dot" id="statusDot"></div>
+    <span class="brand">LAPE VENTURES</span>
+    <span style="color:#3a2a10">·</span>
+    <span class="subbrand">X POST ENGINE</span>
+  </div>
+  <div class="nav-right">
+    <a href="https://x.com/lapeventures" target="_blank" class="nav-link">𝕏 @lapeventures</a>
+    <a href="https://lape-ventures.tiiny.site" target="_blank" class="nav-link gold">↗ LIVE SITE</a>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- LEFT -->
+  <div>
+
+    <!-- Stats Hero -->
+    <div class="stats-hero">
+      <div class="card-dark-label" style="margin-bottom:12px">TODAY'S ACTIVITY</div>
+      <div class="stats-row">
+        <div>
+          <div class="stat-val" style="color:#c8953a" id="sentCount">0</div>
+          <div class="stat-label">SENT TO X</div>
+        </div>
+        <div>
+          <div class="stat-val" style="color:#e8d5a0" id="readyCount">0</div>
+          <div class="stat-label">READY</div>
+        </div>
+        <div>
+          <div class="stat-val" style="color:#5a4a30" id="totalCount">0</div>
+          <div class="stat-label">WRITTEN</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" id="writeBtn" onclick="writeAndPost()">⚡ Write & Post to X</button>
+        <button class="btn-auto" id="autoBtn" onclick="toggleAuto()">▶ Auto (10 min)</button>
+      </div>
+    </div>
+
+    <!-- Active Post -->
+    <div class="card" id="activeCard" style="margin-bottom:18px;display:none">
+      <div class="card-header">
+        <div class="post-meta" style="margin:0;flex:1">
+          <span id="activeEmoji" style="font-size:16px"></span>
+          <span class="post-agent" id="activeName"></span>
+          <span class="post-time" id="activeTime"></span>
+          <span class="post-badge ready" id="activeBadge">READY TO SEND</span>
+        </div>
+      </div>
+      <div class="post-preview">
+        <div class="post-content" id="activeContent"></div>
+        <div class="post-actions">
+          <button class="btn-send" id="sendBtn" onclick="sendActive()">📤 Send to X via IFTTT</button>
+          <button class="btn-copy" id="copyBtn" onclick="copyActive()">📋 Copy</button>
+          <a class="btn-xpost" id="xPostLink" href="#" target="_blank">𝕏 Post Now</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <span class="card-label">ACTIVITY LOG</span>
+        <div class="dot" id="logDot"></div>
+      </div>
+      <div class="log-wrap" id="logWrap">
+        <div class="log-empty">Hit ⚡ Write & Post to X to get started</div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card" id="historyCard" style="display:none">
+      <div class="card-header">
+        <span class="card-label">POST HISTORY</span>
+        <span class="card-label" id="historyCount"></span>
+      </div>
+      <div class="history-wrap" id="historyWrap"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Pipeline -->
+    <div class="card" style="padding:22px">
+      <div class="card-label" style="margin-bottom:16px">PIPELINE STATUS</div>
+      <div id="pipelineSteps"></div>
+    </div>
+
+    <!-- Agents -->
+    <div class="card" style="padding:22px">
+      <div class="card-label" style="margin-bottom:14px">WRITING AGENTS</div>
+      <div id="agentList"></div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card-dark" style="padding:22px">
+      <div class="card-dark-label" style="margin-bottom:14px">QUICK LINKS</div>
+      <div id="quickLinks"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const IFTTT_URL = "https://maker.ifttt.com/trigger/lape_post/with/key/kzrh15fKqmCuSOeJ4FNYEB_I66tqM6-IuNo0rxKuRPn";
+
+const CONTEXT = `LAPE Ventures — Family of 4 building in public. Founders: Luis, Alyssa, Palmer (11) & Everett (8) Jimenez. X: @lapeventures. Site: https://lape-ventures.tiiny.site. Product: Family Venture Finder — 5 questions → personalized AI family business plan → $9 or free on waitlist. 247+ families. Voice: warm, real, family-first. NOT corporate.`;
+
+const AGENT_PROMPTS = [
+  `${CONTEXT}\nWrite a tweet or short thread (max 4 tweets numbered 1/ 2/ etc.) for @lapeventures. Origin story, behind-the-scenes, family moment, or win. Max 270 chars if single. Include https://lape-ventures.tiiny.site when natural. Max 2 hashtags. Output ONLY the post.`,
+  `${CONTEXT}\nWrite an engagement tweet for @lapeventures — question or "reply with X" hook. Under 220 chars. Real family asking community. Output ONLY the post.`,
+  `${CONTEXT}\nWrite a value tweet for @lapeventures — tip about starting a family business. Under 260 chars. Output ONLY the post.`,
+  `${CONTEXT}\nWrite a story thread for @lapeventures. 3-4 tweets numbered 1/ 2/ etc. Real moment building LAPE. End with https://lape-ventures.tiiny.site Output ONLY the thread.`,
+  `${CONTEXT}\nWrite a milestone tweet for @lapeventures — waitlist numbers, launch energy. Under 260 chars. Output ONLY the post.`,
+  `${CONTEXT}\nWrite a soft CTA tweet for @lapeventures pointing to https://lape-ventures.tiiny.site. Under 260 chars. Output ONLY the post.`,
+];
+const AGENT_NAMES  = ["NOVA","REED","LYRA","SCOUT","REX","MAX"];
+const AGENT_EMOJIS = ["📣","💬","✍️","🔍","📊","🎯"];
+
+const PIPELINE_STEPS = [
+  { icon:"⚡", title:"Command Center",    sub:"Writing agents active"     },
+  { icon:"🔗", title:"IFTTT Webhook",     sub:"maker.ifttt.com/lape_post" },
+  { icon:"𝕏",  title:"@lapeventures",    sub:"Auto-posting live"         },
+];
+const QUICK_LINKS = [
+  { icon:"🌐", label:"Live Site",      url:"https://lape-ventures.tiiny.site"                                          },
+  { icon:"𝕏",  label:"X Profile",     url:"https://x.com/lapeventures"                                               },
+  { icon:"⚡", label:"IFTTT",          url:"https://ifttt.com/maker_webhooks"                                         },
+  { icon:"📊", label:"Google Sheet",  url:"https://docs.google.com/spreadsheets/d/1I7LUPD2X246VwfYX0lr08FsTppSTNP-XkFFxXC_C66A" },
+  { icon:"💳", label:"Stripe",        url:"https://dashboard.stripe.com"                                              },
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let posts = [], autoOn = false, autoTimer = null, tickTimer = null, activePost = null, writing = false, sending = false;
+const INTERVAL = 10 * 60;
+
+// ─── RENDER SIDEBAR ───────────────────────────────────────────────────────────
+document.getElementById("pipelineSteps").innerHTML = PIPELINE_STEPS.map((s,i) => `
+  <div class="pipeline-step">
+    <div style="display:flex;flex-direction:column;align-items:center;margin-right:2px">
+      <div class="pipeline-icon">${s.icon}</div>
+      ${i < PIPELINE_STEPS.length-1 ? '<div class="pipeline-line"></div>' : ''}
+    </div>
+    <div style="flex:1">
+      <div class="pipeline-title">${s.title}</div>
+      <div class="pipeline-sub">${s.sub}</div>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+`).join("");
+
+document.getElementById("agentList").innerHTML = AGENT_NAMES.map((n,i) => `
+  <div class="agent-row" id="agentRow${i}">
+    <span style="font-size:14px">${AGENT_EMOJIS[i]}</span>
+    <div>
+      <div style="font-size:11px;color:#c8953a;font-family:'Courier New',monospace;font-weight:bold">${n}</div>
+      <div style="font-size:9px;color:#b8a888;font-family:'Courier New',monospace">${["Tweets & Threads","Engagement","Story Threads","Trend Posts","Milestones","CTA Posts"][i]}</div>
+    </div>
+    <div class="agent-dot" id="agentDot${i}"></div>
+  </div>
+`).join("");
+
+document.getElementById("quickLinks").innerHTML = QUICK_LINKS.map(l => `
+  <a class="quick-link" href="${l.url}" target="_blank">
+    <span style="font-size:13px">${l.icon}</span>
+    <span>${l.label}</span>
+    <span class="quick-arrow">→</span>
+  </a>
+`).join("");
+
+// ─── LOGGING ─────────────────────────────────────────────────────────────────
+function addLog(msg, type = "info") {
+  const wrap = document.getElementById("logWrap");
+  if (wrap.querySelector(".log-empty")) wrap.innerHTML = "";
+  const t = new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit", second:"2-digit" });
+  const div = document.createElement("div");
+  div.className = "log-row";
+  div.innerHTML = `<span class="log-time">${t}</span><span class="log-msg log-${type}">${msg}</span>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById("sentCount").textContent  = posts.filter(p => p.status === "sent").length;
+  document.getElementById("readyCount").textContent = posts.filter(p => p.status === "ready").length;
+  document.getElementById("totalCount").textContent = posts.length;
+  document.getElementById("historyCount").textContent = posts.length + " posts";
+}
+
+// ─── SHOW POST ────────────────────────────────────────────────────────────────
+function showPost(post) {
+  activePost = post;
+  document.getElementById("activeCard").style.display = "";
+  document.getElementById("activeEmoji").textContent = post.emoji;
+  document.getElementById("activeName").textContent  = post.name;
+  document.getElementById("activeTime").textContent  = post.time;
+  document.getElementById("activeContent").textContent = post.content;
+  document.getElementById("xPostLink").href = "https://x.com/intent/tweet?text=" + encodeURIComponent(post.content.slice(0,270));
+  const badge = document.getElementById("activeBadge");
+  badge.textContent = post.status === "sent" ? "✓ SENT TO X" : "READY TO SEND";
+  badge.className   = "post-badge " + (post.status === "sent" ? "sent" : "ready");
+  const sendBtn = document.getElementById("sendBtn");
+  sendBtn.style.display = post.status === "sent" ? "none" : "";
+}
+
+function renderHistory() {
+  const wrap = document.getElementById("historyWrap");
+  const card = document.getElementById("historyCard");
+  if (!posts.length) { card.style.display = "none"; return; }
+  card.style.display = "";
+  wrap.innerHTML = posts.map((p,i) => `
+    <div class="history-row ${activePost?.id === p.id ? 'active':''}" onclick="showPost(posts[${i}])">
+      <span class="history-emoji">${p.emoji}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span class="history-name">${p.name}</span>
+          <span class="history-t">${p.time}</span>
+          <span class="post-badge ${p.status === 'sent' ? 'sent':'ready'}" style="margin-left:auto">${p.status==='sent'?'✓ SENT':'READY'}</span>
+        </div>
+        <div class="history-excerpt">${p.content.slice(0,100)}…</div>
+      </div>
+    </div>
+  `).join("");
+  updateStats();
+}
+
+// ─── GENERATE ────────────────────────────────────────────────────────────────
+async function generatePost() {
+  const i = Math.floor(Math.random() * AGENT_PROMPTS.length);
+  document.getElementById("agentDot" + i).classList.add("active");
+  addLog(AGENT_EMOJIS[i] + " " + AGENT_NAMES[i] + " picking up pen…", "agent");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 500, messages: [{ role: "user", content: AGENT_PROMPTS[i] }] })
+  });
+  const data = await res.json();
+  const content = data.content?.[0]?.text?.trim();
+  document.getElementById("agentDot" + i).classList.remove("active");
+  if (!content) throw new Error("Empty response");
+  addLog(AGENT_EMOJIS[i] + " " + AGENT_NAMES[i] + " wrote: \"" + content.slice(0,50) + "…\"", "success");
+  return { id: Date.now(), content, name: AGENT_NAMES[i], emoji: AGENT_EMOJIS[i], status: "ready", time: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }) };
+}
+
+// ─── SEND ────────────────────────────────────────────────────────────────────
+async function fireIFTTT(content) {
+  addLog("Firing to IFTTT…", "agent");
+  await fetch(IFTTT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({ value1: content, value2: new Date().toISOString(), value3: "lape-hq" })
+  });
+  addLog("✓ Fired to IFTTT → posting to @lapeventures", "success");
+  return true;
+}
+
+async function sendPost(post) {
+  sending = true;
+  document.getElementById("sendBtn").disabled = true;
+  document.getElementById("sendBtn").textContent = "Sending…";
+  await fireIFTTT(post.content);
+  post.status = "sent";
+  sending = false;
+  showPost(post);
+  renderHistory();
+}
+
+// ─── WRITE + SEND ─────────────────────────────────────────────────────────────
+async function writeAndPost() {
+  if (writing || sending) return;
+  writing = true;
+  document.getElementById("writeBtn").disabled = true;
+  document.getElementById("writeBtn").textContent = "✍️ Writing…";
+  document.getElementById("statusDot").classList.add("active");
+  document.getElementById("logDot").classList.add("active");
+  try {
+    const post = await generatePost();
+    posts.unshift(post);
+    if (posts.length > 60) posts.pop();
+    showPost(post);
+    renderHistory();
+    await sendPost(post);
+  } catch(e) {
+    addLog("Error: " + e.message, "error");
+  }
+  writing = false;
+  document.getElementById("writeBtn").disabled = false;
+  document.getElementById("writeBtn").textContent = "⚡ Write & Post to X";
+  if (!autoOn) { document.getElementById("statusDot").classList.remove("active"); document.getElementById("logDot").classList.remove("active"); }
+}
+
+async function sendActive() {
+  if (!activePost || sending) return;
+  await sendPost(activePost);
+}
+
+function copyActive() {
+  if (!activePost) return;
+  navigator.clipboard.writeText(activePost.content).then(() => {
+    const btn = document.getElementById("copyBtn");
+    btn.textContent = "✓ Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "📋 Copy"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+// ─── AUTO MODE ────────────────────────────────────────────────────────────────
+let countdown = INTERVAL;
+function toggleAuto() {
+  autoOn = !autoOn;
+  const btn = document.getElementById("autoBtn");
+  if (autoOn) {
+    btn.textContent = "⏹ Stop";
+    btn.classList.add("on");
+    document.getElementById("statusDot").classList.add("active");
+    addLog("▶ AUTO MODE — posting every 10 minutes", "system");
+    writeAndPost();
+    countdown = INTERVAL;
+    tickTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) countdown = INTERVAL;
+      const m = Math.floor(countdown/60), s = countdown%60;
+      btn.textContent = "⏹ " + m + ":" + s.toString().padStart(2,"0");
+    }, 1000);
+    autoTimer = setInterval(writeAndPost, INTERVAL * 1000);
+  } else {
+    btn.textContent = "▶ Auto (10 min)";
+    btn.classList.remove("on");
+    document.getElementById("statusDot").classList.remove("active");
+    clearInterval(autoTimer);
+    clearInterval(tickTimer);
+    addLog("⏹ Auto mode stopped", "system");
+  }
+}
+</script>
+</body>
+</html>

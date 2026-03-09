@@ -367,6 +367,7 @@ async function fireManual() {
 }
 
 
+function renderStats() {
   document.getElementById("sentCount").textContent  = posts.filter(p => p.status === "sent").length;
   document.getElementById("readyCount").textContent = posts.filter(p => p.status === "ready").length;
   document.getElementById("totalCount").textContent = posts.length;

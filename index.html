@@ -189,6 +189,29 @@
       </div>
     </div>
 
+    <!-- Manual Post -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-header">
+        <span class="card-label">✏️ MANUAL POST</span>
+        <span class="card-label" id="charCount">0 / 280</span>
+      </div>
+      <div style="padding:16px">
+        <textarea id="manualText" onInput="updateCharCount()"
+          placeholder="Type your post here and fire it straight to @lapeventures…"
+          style="width:100%;height:110px;background:#fdf9f3;border:1px solid #e8dcc8;border-radius:10px;padding:12px;font-family:Georgia,serif;font-size:14px;line-height:1.7;color:#2a1e0a;resize:none;outline:none"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="fireManual()" id="manualBtn"
+            style="flex:2;padding:11px;background:#c8953a;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:bold;cursor:pointer;font-family:Georgia,serif">
+            📤 Fire to @lapeventures
+          </button>
+          <a id="manualXLink" href="https://x.com/intent/tweet" target="_blank"
+            style="flex:1;padding:11px;background:#f8f4ee;border:1px solid #e8dcc8;border-radius:10px;color:#5a4a30;font-size:12px;text-decoration:none;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif">
+            𝕏 Open in X
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- Log -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-header">
@@ -237,9 +260,9 @@
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const IFTTT_URL = "https://maker.ifttt.com/trigger/lape_post/with/key/kzrh15fKqmCuSOeJ4FNYEB_I66tqM6-IuNo0rxKuRPn";
+const IFTTT_URL = "https://lape-proxy.bluedevils82.workers.dev/ifttt";
 
-const CONTEXT = `LAPE Ventures — Family of 4 building in public. Founders: Luis, Alyssa, Palmer (11) & Everett (8) Jimenez. X: @lapeventures. Site: https://lape-ventures.tiiny.site. Product: Family Venture Finder — 5 questions → personalized AI family business plan → $9 or free on waitlist. 247+ families. Voice: warm, real, family-first. NOT corporate.`;
+const CONTEXT = `LAPE Ventures — Family of 4 building in public. Founders: Luis, Alyssa, Palmer (5) & Everett (2) Jimenez. X: @lapeventures. Site: https://lape-ventures.tiiny.site. Product: Family Venture Finder — 5 questions → personalized AI family business plan → $9 or free on waitlist. 247+ families. Voice: warm, real, family-first. NOT corporate.`;
 
 const AGENT_PROMPTS = [
   `${CONTEXT}\nWrite a tweet or short thread (max 4 tweets numbered 1/ 2/ etc.) for @lapeventures. Origin story, behind-the-scenes, family moment, or win. Max 270 chars if single. Include https://lape-ventures.tiiny.site when natural. Max 2 hashtags. Output ONLY the post.`,
@@ -254,7 +277,7 @@ const AGENT_EMOJIS = ["📣","💬","✍️","🔍","📊","🎯"];
 
 const PIPELINE_STEPS = [
   { icon:"⚡", title:"Command Center",    sub:"Writing agents active"     },
-  { icon:"🔗", title:"IFTTT Webhook",     sub:"maker.ifttt.com/lape_post" },
+  { icon:"🔗", title:"IFTTT Webhook",     sub:"via lape-proxy worker" },
   { icon:"𝕏",  title:"@lapeventures",    sub:"Auto-posting live"         },
 ];
 const QUICK_LINKS = [
@@ -316,7 +339,34 @@ function addLog(msg, type = "info") {
 }
 
 // ─── STATS ───────────────────────────────────────────────────────────────────
-function updateStats() {
+function updateCharCount() {
+  const text = document.getElementById("manualText").value;
+  const count = document.getElementById("charCount");
+  count.textContent = text.length + " / 280";
+  count.style.color = text.length > 280 ? "#ef4444" : "#8a7a5a";
+  document.getElementById("manualXLink").href = "https://x.com/intent/tweet?text=" + encodeURIComponent(text.slice(0,270));
+}
+
+async function fireManual() {
+  const text = document.getElementById("manualText").value.trim();
+  if (!text) return;
+  const btn = document.getElementById("manualBtn");
+  btn.disabled = true;
+  btn.textContent = "Firing…";
+  addLog("📤 Manual post firing to IFTTT…", "agent");
+  await fetch(IFTTT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({ value1: text, value2: new Date().toISOString(), value3: "manual" })
+  });
+  addLog("✓ Manual post fired → @lapeventures", "success");
+  btn.disabled = false;
+  btn.textContent = "📤 Fire to @lapeventures";
+  document.getElementById("manualText").value = "";
+  updateCharCount();
+}
+
+
   document.getElementById("sentCount").textContent  = posts.filter(p => p.status === "sent").length;
   document.getElementById("readyCount").textContent = posts.filter(p => p.status === "ready").length;
   document.getElementById("totalCount").textContent = posts.length;
@@ -365,7 +415,7 @@ async function generatePost() {
   const i = Math.floor(Math.random() * AGENT_PROMPTS.length);
   document.getElementById("agentDot" + i).classList.add("active");
   addLog(AGENT_EMOJIS[i] + " " + AGENT_NAMES[i] + " picking up pen…", "agent");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("https://lape-proxy.bluedevils82.workers.dev/anthropic", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 500, messages: [{ role: "user", content: AGENT_PROMPTS[i] }] })
@@ -417,7 +467,14 @@ async function writeAndPost() {
     renderHistory();
     await sendPost(post);
   } catch(e) {
-    addLog("Error: " + e.message, "error");
+    addLog("⚠️ Error: " + e.message + " — check API key proxy or IFTTT connection", "error");
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      clearInterval(tickTimer);
+      const btn = document.getElementById("autoBtn");
+      if (btn) { btn.textContent = "▶ Auto (10 min)"; btn.classList.remove("on"); }
+      addLog("Auto-post paused due to error. Fix the issue and restart.", "system");
+    }
   }
   writing = false;
   document.getElementById("writeBtn").disabled = false;
@@ -458,7 +515,22 @@ function toggleAuto() {
       const m = Math.floor(countdown/60), s = countdown%60;
       btn.textContent = "⏹ " + m + ":" + s.toString().padStart(2,"0");
     }, 1000);
-    autoTimer = setInterval(writeAndPost, INTERVAL * 1000);
+    let autoPostCount = 0;
+    const MAX_AUTO_POSTS = 8; // X flags accounts posting more than ~10x/day
+    autoTimer = setInterval(() => {
+      autoPostCount++;
+      if (autoPostCount >= MAX_AUTO_POSTS) {
+        clearInterval(autoTimer);
+        clearInterval(tickTimer);
+        const btn = document.getElementById("autoBtn");
+        btn.textContent = "▶ Auto (daily limit reached)";
+        btn.classList.remove("on");
+        document.getElementById("statusDot").classList.remove("active");
+        addLog("⚠️ Auto-post paused — 8 post daily limit reached. Protects @lapeventures from X rate limits.", "system");
+        return;
+      }
+      writeAndPost();
+    }, INTERVAL * 1000);
   } else {
     btn.textContent = "▶ Auto (10 min)";
     btn.classList.remove("on");

@@ -416,11 +416,23 @@ async function generatePost() {
   const i = Math.floor(Math.random() * AGENT_PROMPTS.length);
   document.getElementById("agentDot" + i).classList.add("active");
   addLog(AGENT_EMOJIS[i] + " " + AGENT_NAMES[i] + " picking up pen…", "agent");
-  const res = await fetch("https://lape-proxy.bluedevils82.workers.dev/anthropic", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 500, messages: [{ role: "user", content: AGENT_PROMPTS[i] }] })
-  });
+  let res;
+  try {
+    res = await fetch("https://lape-proxy.bluedevils82.workers.dev/anthropic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 500, messages: [{ role: "user", content: AGENT_PROMPTS[i] }] })
+    });
+  } catch(fetchErr) {
+    addLog("🔴 Network error: " + fetchErr.message, "error");
+    addLog("🔴 Check: is the Worker deployed? Are ANTHROPIC_KEY + IFTTT_KEY secrets set?", "error");
+    throw fetchErr;
+  }
+  if (!res.ok) {
+    const errText = await res.text();
+    addLog("🔴 Worker HTTP " + res.status + ": " + errText.slice(0,300), "error");
+    throw new Error("Worker error " + res.status);
+  }
   const data = await res.json();
   const content = data.content?.[0]?.text?.trim();
   document.getElementById("agentDot" + i).classList.remove("active");

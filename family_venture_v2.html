@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intelligent Family Ventures — Plan Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   DESIGN SYSTEM
+══════════════════════════════════════════ */
+:root {
+  --ink:       #0A0A0A;
+  --gold:      #C9A84C;
+  --gold-dim:  #8B6E2E;
+  --gold-bg:   rgba(201,168,76,0.08);
+  --cream:     #F7F4EE;
+  --paper:     #FDFCF9;
+  --mid:       #6B7280;
+  --faint:     rgba(247,244,238,0.45);
+  --divider:   rgba(201,168,76,0.15);
+  --red:       #C0392B;
+  --green:     #27AE60;
+  --surface:   rgba(255,255,255,0.03);
+  --border:    rgba(255,255,255,0.07);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--ink);
+  color:var(--cream);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* grain */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
+}
+
+.gold-bar{position:fixed;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-dim));z-index:200}
+
+/* ══ LAYOUT ══ */
+header,main{position:relative;z-index:1;max-width:940px;margin:0 auto}
+header{padding:64px 40px 40px;border-bottom:1px solid var(--divider)}
+main{padding:40px 40px 100px}
+
+.brand{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:14px;opacity:.8}
+
+header h1{font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,42px);
+  font-weight:400;line-height:1.2;color:var(--paper);margin-bottom:10px}
+header h1 em{color:var(--gold);font-style:italic}
+header p{font-size:14px;color:var(--mid);line-height:1.75;max-width:560px;font-weight:300}
+
+/* ══ SCREENS ══ */
+.screen{display:none}.screen.active{display:block}
+
+/* ══ SURVEY ══ */
+.survey-intro{margin-bottom:36px}
+.survey-intro h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;
+  color:var(--paper);margin-bottom:6px}
+.survey-intro p{font-size:13px;color:var(--mid);line-height:1.7}
+
+.q-block{margin-bottom:28px;opacity:0;transform:translateY(12px);animation:fadeUp .4s forwards}
+.q-block:nth-child(1){animation-delay:.04s}.q-block:nth-child(2){animation-delay:.08s}
+.q-block:nth-child(3){animation-delay:.12s}.q-block:nth-child(4){animation-delay:.16s}
+.q-block:nth-child(5){animation-delay:.20s}.q-block:nth-child(6){animation-delay:.24s}
+.q-block:nth-child(7){animation-delay:.28s}.q-block:nth-child(8){animation-delay:.32s}
+
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+
+.q-num{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;
+  color:var(--gold);margin-bottom:5px}
+.q-label{font-family:'Playfair Display',serif;font-size:16px;color:var(--paper);
+  margin-bottom:5px;line-height:1.4}
+.q-hint{font-size:12px;color:var(--mid);margin-bottom:9px;font-weight:300}
+
+textarea,input[type=text]{
+  width:100%;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(201,168,76,0.18);
+  border-radius:3px;padding:13px 15px;
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--paper);
+  resize:vertical;transition:border-color .2s,background .2s;line-height:1.6;
+  -webkit-appearance:none
+}
+textarea:focus,input:focus{
+  outline:none;border-color:var(--gold);background:rgba(201,168,76,0.06)
+}
+textarea::placeholder,input::placeholder{color:rgba(107,114,128,.55);font-weight:300}
+
+.name-row{margin-bottom:32px;padding-bottom:32px;border-bottom:1px solid var(--divider)}
+
+.new-q-badge{
+  display:inline-block;font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:2px;color:var(--gold);background:var(--gold-bg);
+  border:1px solid rgba(201,168,76,.3);padding:2px 8px;border-radius:2px;
+  margin-left:8px;vertical-align:middle;text-transform:uppercase
+}
+
+/* ══ GENERATE BUTTON ══ */
+.btn-gen{
+  display:flex;align-items:center;gap:10px;
+  background:var(--gold);color:var(--ink);border:none;
+  padding:15px 30px;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:600;letter-spacing:.4px;
+  cursor:pointer;border-radius:2px;margin-top:20px;
+  transition:all .2s
+}
+.btn-gen:hover{background:#E0BC5E;transform:translateY(-1px);
+  box-shadow:0 8px 28px rgba(201,168,76,.3)}
+.btn-gen:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* ══ PROCESSING ══ */
+.proc-header{text-align:center;padding:44px 0 40px}
+.proc-header h2{font-family:'Playfair Display',serif;font-size:28px;
+  font-weight:400;color:var(--paper);margin-bottom:6px}
+.proc-header p{font-size:13px;color:var(--mid)}
+
+.prog-track{background:rgba(255,255,255,0.06);border-radius:2px;
+  height:3px;margin:28px 0 10px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));
+  border-radius:2px;transition:width .4s ease;width:0%}
+.prog-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--mid);
+  letter-spacing:2px;text-align:center;margin-bottom:32px;min-height:16px}
+
+/* ══ OBSERVABILITY LOG ══ */
+.obs-toggle{font-family:'DM Mono',monospace;font-size:9px;color:var(--mid);
+  background:none;border:none;cursor:pointer;letter-spacing:2px;
+  text-transform:uppercase;display:block;margin:0 0 8px;transition:color .2s}
+.obs-toggle:hover{color:var(--gold)}
+.obs-log{display:none;background:rgba(0,0,0,.5);border:1px solid var(--border);
+  border-radius:3px;padding:14px 16px;margin-bottom:24px;max-height:160px;
+  overflow-y:auto;font-family:'DM Mono',monospace;font-size:10px;
+  color:rgba(247,244,238,.4);line-height:1.7}
+.obs-log .log-ok{color:rgba(39,174,96,.7)}
+.obs-log .log-err{color:rgba(192,57,43,.8)}
+.obs-log .log-warn{color:rgba(201,168,76,.7)}
+
+/* ══ ROUND SECTIONS ══ */
+.round-sect{margin-bottom:36px}
+.round-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:10px}
+.round-lbl::after{content:'';flex:1;height:1px;background:var(--divider)}
+
+/* ══ AGENT CARDS ══ */
+.agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+.a-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:14px;transition:all .25s;position:relative;overflow:hidden
+}
+.a-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--ca,var(--gold));transform:scaleX(0);transform-origin:left;
+  transition:transform .5s ease}
+.a-card.running::before{transform:scaleX(.55)}
+.a-card.done::before{transform:scaleX(1)}
+.a-card.running{border-color:rgba(201,168,76,.28);background:rgba(201,168,76,.04)}
+.a-card.done{border-color:rgba(201,168,76,.18);background:rgba(201,168,76,.05)}
+.a-card.error{border-color:rgba(192,57,43,.35);background:rgba(192,57,43,.04)}
+
+.a-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.a-icon{font-size:19px;line-height:1}
+.a-status{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  padding:3px 7px;border-radius:2px;text-transform:uppercase}
+.s-wait{color:var(--mid);background:rgba(107,114,128,.1)}
+.s-run{color:var(--gold);background:rgba(201,168,76,.14);animation:pulse 1.5s infinite}
+.s-done{color:var(--green);background:rgba(39,174,96,.12)}
+.s-err{color:var(--red);background:rgba(192,57,43,.12)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+.a-name{font-family:'Playfair Display',serif;font-size:13px;color:var(--paper);margin-bottom:2px}
+.a-bias{font-family:'DM Mono',monospace;font-size:9px;color:var(--mid);
+  letter-spacing:2px;text-transform:uppercase}
+.a-preview{font-size:11px;color:var(--faint);line-height:1.5;margin-top:8px;
+  font-style:italic;display:none;border-top:1px solid var(--border);padding-top:7px}
+.a-card.done .a-preview{display:block}
+
+/* ══ DEBATE PAIRS ══ */
+.pairs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pair-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:14px;transition:all .25s}
+.pair-card.running{border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.04)}
+.pair-card.done{border-color:rgba(39,174,96,.22);background:rgba(39,174,96,.04)}
+.pair-card.error{border-color:rgba(192,57,43,.3)}
+.pair-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:7px}
+.pair-agents{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mid)}
+.pair-vs{font-family:'Playfair Display',serif;font-size:10px;color:var(--gold);font-style:italic}
+.pair-status{font-size:11px;color:var(--mid);margin-top:7px;font-style:italic}
+.pair-status.ok{color:var(--green);font-style:normal;font-family:'DM Mono',monospace;
+  font-size:9px;letter-spacing:1px}
+.pair-status.err{color:var(--red);font-style:normal;font-size:10px}
+
+/* ══ NARRATOR CARD ══ */
+.narrator-wrap{background:var(--gold-bg);border:1px solid rgba(201,168,76,.22);
+  border-radius:3px;padding:20px 22px;margin-top:12px;position:relative;overflow:hidden}
+.narrator-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold-dim),var(--gold),var(--gold-dim));
+  transform:scaleX(0);transform-origin:left;transition:transform 1s ease}
+.narrator-wrap.running::before{transform:scaleX(.5)}
+.narrator-wrap.done::before{transform:scaleX(1)}
+.nar-inner{display:flex;align-items:center;gap:14px}
+.nar-icon{font-size:26px}
+.nar-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--paper);margin-bottom:2px}
+.nar-sub{font-size:12px;color:var(--mid)}
+
+/* ══ RESULTS ══ */
+.res-header{text-align:center;padding:44px 0 48px;border-bottom:1px solid var(--divider);margin-bottom:48px}
+.res-header .star{font-size:36px;margin-bottom:14px;display:block;animation:fadeUp .5s both}
+.res-header h2{font-family:'Playfair Display',serif;font-size:32px;font-weight:400;
+  color:var(--paper);margin-bottom:8px}
+.res-header p{font-size:14px;color:var(--mid)}
+
+.out-sect{margin-bottom:48px;opacity:0;animation:fadeUp .5s forwards}
+.out-sect:nth-child(1){animation-delay:.1s}.out-sect:nth-child(2){animation-delay:.18s}
+.out-sect:nth-child(3){animation-delay:.26s}.out-sect:nth-child(4){animation-delay:.34s}
+.out-sect:nth-child(5){animation-delay:.42s}.out-sect:nth-child(6){animation-delay:.50s}
+.out-sect:nth-child(7){animation-delay:.58s}
+
+.sect-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:10px}
+.sect-h{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;
+  color:var(--paper);margin-bottom:14px}
+
+/* ══ SCORES BAR ══ */
+.scores-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:8px}
+.score-box{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:16px;text-align:center}
+.score-val{font-family:'Playfair Display',serif;font-size:32px;color:var(--gold);
+  font-weight:700;line-height:1;margin-bottom:4px}
+.score-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--mid);text-transform:uppercase}
+.score-bar-track{height:3px;background:rgba(255,255,255,.06);
+  border-radius:2px;margin-top:8px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold-dim),var(--gold));
+  transition:width .8s ease}
+
+/* ══ THROUGHLINE ══ */
+.throughline{background:var(--gold-bg);border-left:3px solid var(--gold);
+  padding:20px 24px;border-radius:0 3px 3px 0;
+  font-family:'Playfair Display',serif;font-size:17px;font-style:italic;
+  color:var(--paper);line-height:1.6;margin-bottom:24px}
+
+/* ══ NARRATOR LETTER ══ */
+.nar-letter{border-left:3px solid var(--gold);padding:24px 28px;
+  border-radius:0 3px 3px 0;background:var(--gold-bg)}
+.nar-letter p{font-size:15px;line-height:1.85;color:rgba(247,244,238,.88);
+  margin-bottom:14px;font-weight:300}
+.nar-letter p:last-child{margin-bottom:0}
+
+/* ══ VENTURE IDEAS ══ */
+.ventures-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.venture-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:20px;position:relative;overflow:hidden}
+.venture-card::before{content:'';position:absolute;top:0;left:0;right:0;
+  height:2px;background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
+.v-path-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+.v-name{font-family:'Playfair Display',serif;font-size:16px;color:var(--paper);
+  margin-bottom:8px}
+.v-revenue{font-size:13px;color:var(--faint);margin-bottom:10px;line-height:1.5}
+.v-roles{list-style:none;margin-bottom:10px}
+.v-roles li{font-size:12px;color:var(--mid);line-height:1.6;padding-left:12px;position:relative}
+.v-roles li::before{content:'→';position:absolute;left:0;color:var(--gold);font-size:10px}
+.v-why{font-size:12px;color:var(--faint);line-height:1.6;font-style:italic;
+  border-top:1px solid var(--border);padding-top:10px;margin-top:10px}
+
+/* ══ THREE PATHS ══ */
+.paths-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.path-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:18px;cursor:pointer;transition:all .2s;position:relative}
+.path-card:hover{border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.06);
+  transform:translateY(-2px)}
+.path-card.selected{border-color:var(--gold);background:var(--gold-bg)}
+.path-card.selected::after{content:'✓ SELECTED';position:absolute;top:10px;right:10px;
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--gold)}
+.path-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:6px}
+.path-badge.cons{color:#5DADE2}.path-badge.bal{color:var(--gold)}.path-badge.agg{color:#E67E22}
+.path-name{font-family:'Playfair Display',serif;font-size:15px;color:var(--paper);margin-bottom:6px}
+.path-desc{font-size:12px;color:var(--mid);line-height:1.6}
+
+/* ══ FINDINGS ══ */
+.findings-grid{display:grid;gap:12px}
+.find-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:18px 20px;position:relative;overflow:hidden}
+.find-card::before{content:'';position:absolute;top:0;left:0;bottom:0;
+  width:3px;background:var(--ca)}
+.find-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.find-agent{font-family:'Playfair Display',serif;font-size:13px;color:var(--paper)}
+.find-bias{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--mid);text-transform:uppercase;margin-left:auto}
+.find-txt{font-size:14px;font-weight:500;color:var(--paper);margin-bottom:7px;line-height:1.5}
+.find-analysis{font-size:12px;color:var(--faint);line-height:1.7;font-weight:300}
+.find-citation{font-size:11px;color:var(--mid);font-style:italic;
+  border-left:2px solid var(--gold);padding-left:10px;margin-top:8px;line-height:1.5}
+
+/* ══ VERDICTS ══ */
+.verdict-card{background:var(--surface);border:1px solid rgba(201,168,76,.18);
+  border-radius:3px;padding:20px 22px;margin-bottom:12px}
+.v-type{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:3px}
+.v-tension{font-family:'Playfair Display',serif;font-size:15px;
+  color:var(--paper);margin-bottom:10px}
+.v-text{font-size:13px;color:var(--faint);line-height:1.8;font-weight:300}
+
+/* ══ ACTIONS ══ */
+.actions-list{display:grid;gap:10px}
+.act-card{display:grid;grid-template-columns:54px 1fr;gap:14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:3px;
+  padding:18px;align-items:start}
+.act-num{font-family:'Playfair Display',serif;font-size:34px;color:rgba(201,168,76,.18);
+  line-height:1;font-weight:700;text-align:center}
+.act-phase{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:var(--gold);margin-bottom:3px}
+.act-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--paper);margin-bottom:7px}
+.act-body{font-size:12px;color:var(--faint);line-height:1.7;margin-bottom:5px}
+.act-metric{font-family:'DM Mono',monospace;font-size:9px;color:var(--green);
+  letter-spacing:1px;border-top:1px solid var(--border);padding-top:7px;margin-top:7px}
+
+/* ══ ROADMAP ══ */
+.roadmap-list{display:grid;gap:12px}
+.rm-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:18px 20px;border-top:2px solid var(--gold)}
+.rm-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--paper);margin-bottom:6px}
+.rm-desc{font-size:12px;color:var(--faint);line-height:1.7;margin-bottom:10px}
+.rm-milestones{list-style:none}
+.rm-milestones li{font-size:12px;color:var(--mid);line-height:1.6;
+  padding-left:14px;position:relative;margin-bottom:2px}
+.rm-milestones li::before{content:'◆';position:absolute;left:0;
+  color:rgba(201,168,76,.4);font-size:8px;top:3px}
+
+/* ══ RISKS ══ */
+.risk-table{width:100%;border-collapse:collapse}
+.risk-table th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--gold);text-align:left;padding:8px 12px;
+  background:rgba(0,0,0,.4);border-bottom:1px solid var(--divider)}
+.risk-table td{font-size:12px;color:var(--faint);padding:10px 12px;
+  border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6}
+.risk-table td:first-child{font-family:'DM Mono',monospace;font-size:10px;
+  font-weight:500;letter-spacing:1px;width:64px}
+.risk-high{color:var(--red)}.risk-med{color:#E67E22}.risk-low{color:var(--green)}
+.risk-name{color:var(--paper);font-size:12px;font-weight:500;margin-bottom:3px}
+
+/* ══ DOWNLOAD ══ */
+.dl-block{background:var(--gold-bg);border:1px solid rgba(201,168,76,.28);
+  border-radius:3px;padding:28px 32px;text-align:center;margin-top:44px}
+.dl-block h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--paper);margin-bottom:6px}
+.dl-block p{font-size:13px;color:var(--mid);margin-bottom:20px}
+.btn-dl{display:inline-flex;align-items:center;gap:8px;background:var(--gold);
+  color:var(--ink);border:none;padding:13px 26px;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;border-radius:2px;
+  transition:all .2s;text-decoration:none;letter-spacing:.4px}
+.btn-dl:hover{background:#E0BC5E;transform:translateY(-1px);
+  box-shadow:0 6px 22px rgba(201,168,76,.3)}
+.btn-restart{display:inline-flex;align-items:center;gap:7px;
+  background:transparent;color:var(--mid);border:1px solid var(--border);
+  padding:13px 26px;font-family:'DM Sans',sans-serif;font-size:13px;
+  cursor:pointer;border-radius:2px;margin-left:10px;transition:all .2s}
+.btn-restart:hover{color:var(--paper);border-color:rgba(255,255,255,.2)}
+
+/* ══ JSON ══ */
+.json-toggle{font-family:'DM Mono',monospace;font-size:9px;color:var(--mid);
+  background:none;border:none;cursor:pointer;letter-spacing:2px;
+  padding:8px 0;display:block;margin:20px auto 0;text-transform:uppercase;transition:color .2s}
+.json-toggle:hover{color:var(--gold)}
+.json-block{display:none;background:rgba(0,0,0,.45);border:1px solid var(--border);
+  border-radius:3px;padding:16px;margin-top:10px;
+  font-family:'DM Mono',monospace;font-size:10px;color:rgba(247,244,238,.4);
+  white-space:pre-wrap;overflow:auto;max-height:360px;line-height:1.6}
+
+/* ══ ERROR ══ */
+.err-block{background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.28);
+  border-radius:3px;padding:16px 20px;margin-top:16px;
+  font-size:13px;color:#E57373;line-height:1.6;display:none}
+
+/* ══ DIVIDER ══ */
+hr.sect{height:1px;border:none;background:var(--divider);margin:40px 0}
+
+/* ══ SPIN ══ */
+.spin{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(201,168,76,.28);border-radius:3px}
+
+@media(max-width:640px){
+  header,main{padding-left:20px;padding-right:20px}
+  .agents-grid,.pairs-grid,.paths-grid,.scores-row{grid-template-columns:1fr 1fr}
+  .act-card{grid-template-columns:1fr}.act-num{display:none}
+}
+</style>
+</head>
+<body>
+<div class="gold-bar"></div>
+
+<header>
+  <div class="brand">Intelligent Family Ventures</div>
+  <h1>The <em>7-Agent</em> Family Venture System</h1>
+  <p>Answer 7 questions. Six specialists analyze, debate, and disagree. One Narrator synthesizes the truth. Your personalized venture plan — built from your exact words.</p>
+</header>
+
+<main>
+
+<!-- ══ SCREEN 1: SURVEY ══ -->
+<div class="screen active" id="scr-survey">
+
+  <div class="survey-intro" style="margin-top:36px">
+    <h2>Seven questions. Seven minutes. One plan.</h2>
+    <p>Specific answers produce specific plans. The more honest you are, the sharper the output.</p>
+  </div>
+
+  <!-- Client name -->
+  <div class="q-block name-row">
+    <div class="q-num">CLIENT</div>
+    <div class="q-label">Who is this plan for?</div>
+    <div class="q-hint">Your name or family name — appears on the cover of your plan.</div>
+    <input type="text" id="cn" placeholder="e.g. The Martinez Family, David & Keisha, Sarah Okonkwo" />
+  </div>
+
+  <!-- Q1 -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 01</div>
+    <div class="q-label">Describe your household in one sentence: Who lives under your roof, what are 2–3 core family values, and what stage of life are you in?</div>
+    <div class="q-hint">Be specific about people, values, and stage — this shapes everything that follows.</div>
+    <textarea id="q1" rows="3" placeholder="e.g. Married couple (34 & 31), one daughter age 4, values = faith, hard work, legacy — we're in our building years but feel stuck in survival mode..."></textarea>
+  </div>
+
+  <!-- Q2 -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 02</div>
+    <div class="q-label">What's the ONE biggest challenge or stressor in your family life or finances right now — and how long has it been an issue?</div>
+    <div class="q-hint">Name the actual number or situation. Duration matters — how long has this been unresolved?</div>
+    <textarea id="q2" rows="3" placeholder="e.g. $31k in credit card debt at 24% interest, been growing for 2 years. We make good money but can't get ahead. Minimum payments eat $600/month..."></textarea>
+  </div>
+
+  <!-- Q3 -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 03</div>
+    <div class="q-label">In 3–5 years, where do you want your family to be — one specific financial milestone and one life/legacy change?</div>
+    <div class="q-hint">Not a range. A specific number. And a concrete legacy change — not a feeling.</div>
+    <textarea id="q3" rows="3" placeholder="e.g. $150k household income. And a business my kids can inherit — something we built ourselves that doesn't depend on a boss..."></textarea>
+  </div>
+
+  <!-- Q4 -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 04</div>
+    <div class="q-label">In the last 6–12 months: Where does most of your family time, energy, and money actually go — and where do you wish it went to build toward a family venture?</div>
+    <div class="q-hint">The honest answer, not the ideal. The gap between these two is where the plan lives.</div>
+    <textarea id="q4" rows="3" placeholder="e.g. Money: bills, eating out, subscriptions we don't use. Time: commuting, Netflix, scrolling. Wish: learning real estate, building the side business we keep talking about..."></textarea>
+  </div>
+
+  <!-- Q5 -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 05</div>
+    <div class="q-label">On a scale of 1–10, how confident are you that your family could successfully launch and run a joint venture — and what one thing would raise that by 3+ points?</div>
+    <div class="q-hint">Give the number first. Then explain what's driving it and what would change it.</div>
+    <textarea id="q5" rows="3" placeholder="e.g. 5/10. We have drive but no structure. 3 more points would come from having a clear first step and knowing exactly who does what in the business..."></textarea>
+  </div>
+
+  <!-- Q6 -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 06</div>
+    <div class="q-label">If we delivered a tailored family venture plan today, what's the single first action your family would realistically take — and what might stop you?</div>
+    <div class="q-hint">Be honest about the stopper. "Time" is not a real answer — what's the real blocker?</div>
+    <textarea id="q6" rows="3" placeholder="e.g. We'd finally register the LLC we've been talking about for 8 months. What would stop us: disagreeing on who's actually in charge of what..."></textarea>
+  </div>
+
+  <!-- Q7 — NEW -->
+  <div class="q-block">
+    <div class="q-num">QUESTION 07 <span class="new-q-badge">NEW</span></div>
+    <div class="q-label">What does your family know how to do better than most people — a skill, industry knowledge, or connection that others would genuinely pay for?</div>
+    <div class="q-hint">This is your unfair advantage. The venture ideas built for you come directly from this answer.</div>
+    <textarea id="q7" rows="3" placeholder="e.g. My husband has 12 years in construction management, I have a nursing background and deep network in healthcare. We know both worlds — building and healthcare real estate..."></textarea>
+  </div>
+
+  <button class="btn-gen" id="btn-gen" onclick="startPipeline()">
+    <span>⚡</span> Generate My Family Venture Plan — 7 Agents
+  </button>
+
+  <div class="err-block" id="surv-err"></div>
+
+</div>
+
+<!-- ══ SCREEN 2: PROCESSING ══ -->
+<div class="screen" id="scr-proc">
+
+  <div class="proc-header">
+    <h2>The agents are working.</h2>
+    <p>10 API calls · 4 rounds · debate model · ~60 seconds</p>
+  </div>
+
+  <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="prog-label" id="prog-lbl">INITIALIZING</div>
+
+  <!-- Observability log -->
+  <button class="obs-toggle" onclick="toggleLog()">▸ SHOW PIPELINE LOG</button>
+  <div class="obs-log" id="obs-log"></div>
+
+  <!-- Round 1 -->
+  <div class="round-sect">
+    <div class="round-lbl">Round 01 — Independent Analysis (parallel)</div>
+    <div class="agents-grid" id="r1-grid">
+      <div class="a-card" id="c-arch" style="--ca:#2E86C1">
+        <div class="a-top"><div class="a-icon">🏛</div><div class="a-status s-wait" id="s-arch">WAITING</div></div>
+        <div class="a-name">Family Architect</div><div class="a-bias">POSSIBILITY</div>
+        <div class="a-preview" id="p-arch"></div>
+      </div>
+      <div class="a-card" id="c-diag" style="--ca:#C0392B">
+        <div class="a-top"><div class="a-icon">⚡</div><div class="a-status s-wait" id="s-diag">WAITING</div></div>
+        <div class="a-name">Crisis Diagnostician</div><div class="a-bias">URGENCY</div>
+        <div class="a-preview" id="p-diag"></div>
+      </div>
+      <div class="a-card" id="c-strat" style="--ca:#1E8449">
+        <div class="a-top"><div class="a-icon">🎯</div><div class="a-status s-wait" id="s-strat">WAITING</div></div>
+        <div class="a-name">Goals Strategist</div><div class="a-bias">AMBITION</div>
+        <div class="a-preview" id="p-strat"></div>
+      </div>
+      <div class="a-card" id="c-anal" style="--ca:#B7950B">
+        <div class="a-top"><div class="a-icon">🔍</div><div class="a-status s-wait" id="s-anal">WAITING</div></div>
+        <div class="a-name">Pattern Analyst</div><div class="a-bias">BEHAVIORAL REALITY</div>
+        <div class="a-preview" id="p-anal"></div>
+      </div>
+      <div class="a-card" id="c-prof" style="--ca:#7D3C98">
+        <div class="a-top"><div class="a-icon">🛡</div><div class="a-status s-wait" id="s-prof">WAITING</div></div>
+        <div class="a-name">Risk Profiler</div><div class="a-bias">PROTECTION</div>
+        <div class="a-preview" id="p-prof"></div>
+      </div>
+      <div class="a-card" id="c-prio" style="--ca:#1A5276">
+        <div class="a-top"><div class="a-icon">🚀</div><div class="a-status s-wait" id="s-prio">WAITING</div></div>
+        <div class="a-name">Action Prioritizer</div><div class="a-bias">MOMENTUM</div>
+        <div class="a-preview" id="p-prio"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Round 2 -->
+  <div class="round-sect">
+    <div class="round-lbl">Round 02 — Debate Engine (3 calls, optimized)</div>
+    <div class="pairs-grid">
+      <div class="pair-card" id="pair-1">
+        <div class="pair-lbl">Conflict 01</div>
+        <div class="pair-agents"><span>🏛 Architect</span><span class="pair-vs">vs</span><span>⚡ Diagnostician</span></div>
+        <div class="pair-status" id="ps-1">Waiting for Round 1...</div>
+      </div>
+      <div class="pair-card" id="pair-2">
+        <div class="pair-lbl">Conflict 02</div>
+        <div class="pair-agents"><span>🎯 Strategist</span><span class="pair-vs">vs</span><span>🔍 Analyst</span></div>
+        <div class="pair-status" id="ps-2">Waiting for Round 1...</div>
+      </div>
+      <div class="pair-card" id="pair-3">
+        <div class="pair-lbl">Conflict 03</div>
+        <div class="pair-agents"><span>🛡 Profiler</span><span class="pair-vs">vs</span><span>🚀 Prioritizer</span></div>
+        <div class="pair-status" id="ps-3">Waiting for Round 1...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Round 3: Narrator -->
+  <div class="round-sect">
+    <div class="round-lbl">Round 03 — Narrator Synthesis</div>
+    <div class="narrator-wrap" id="nar-card">
+      <div class="nar-inner">
+        <div class="nar-icon">✍️</div>
+        <div><div class="nar-title">The Narrator</div><div class="nar-sub" id="nar-sub">Waiting for all agents...</div></div>
+        <div class="a-status s-wait" id="s-nar" style="margin-left:auto">WAITING</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="err-block" id="proc-err"></div>
+
+</div>
+
+<!-- ══ SCREEN 3: RESULTS ══ -->
+<div class="screen" id="scr-res">
+
+  <div class="res-header">
+    <span class="star">✦</span>
+    <h2 id="res-title">Your venture plan is ready.</h2>
+    <p id="res-sub">7 agents · 3 debates · 3 venture paths · 1 coherent truth</p>
+  </div>
+
+  <!-- Scores -->
+  <div class="out-sect">
+    <div class="sect-lbl">Family Venture Score</div>
+    <div class="scores-row" id="scores-row"></div>
+  </div>
+
+  <!-- Throughline -->
+  <div class="out-sect">
+    <div class="sect-lbl">The Throughline</div>
+    <div class="throughline" id="res-throughline">Loading...</div>
+  </div>
+
+  <!-- Narrator Letter -->
+  <div class="out-sect">
+    <div class="sect-lbl">01 — The Narrator's Letter</div>
+    <div class="nar-letter" id="res-letter"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- Venture Ideas -->
+  <div class="out-sect">
+    <div class="sect-lbl">02 — Your Tailored Venture Ideas</div>
+    <div class="sect-h">Built from your unfair advantage.</div>
+    <div class="ventures-grid" id="res-ventures"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- Three Paths -->
+  <div class="out-sect">
+    <div class="sect-lbl">03 — Three Execution Paths</div>
+    <div class="sect-h">Choose how bold you want to be.</div>
+    <div class="paths-grid" id="res-paths"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- Expert Findings -->
+  <div class="out-sect">
+    <div class="sect-lbl">04 — Expert Findings</div>
+    <div class="sect-h">What each agent concluded about you.</div>
+    <div class="findings-grid" id="res-findings"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- Verdicts -->
+  <div class="out-sect">
+    <div class="sect-lbl">05 — The Verdicts</div>
+    <div class="sect-h">How the debates resolved.</div>
+    <div id="res-verdicts"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- 90-Day Actions -->
+  <div class="out-sect">
+    <div class="sect-lbl">06 — 90-Day Action Plan</div>
+    <div class="sect-h">Your first three moves.</div>
+    <div class="actions-list" id="res-actions"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- Roadmap -->
+  <div class="out-sect">
+    <div class="sect-lbl">07 — 3-Year Roadmap</div>
+    <div class="sect-h">Year by year milestones.</div>
+    <div class="roadmap-list" id="res-roadmap"></div>
+  </div>
+
+  <hr class="sect">
+
+  <!-- Risks -->
+  <div class="out-sect">
+    <div class="sect-lbl">08 — Risk Register</div>
+    <div class="sect-h">What could unravel this — and how to prevent it.</div>
+    <table class="risk-table" id="res-risks">
+      <thead><tr><th>LEVEL</th><th>RISK</th><th>MITIGATION</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Download -->
+  <div class="dl-block">
+    <h3>Plan complete.</h3>
+    <p>Download the full JSON payload — ready to pass directly to the PDF generator.</p>
+    <button class="btn-dl" onclick="downloadJSON()">⬇ Download Plan JSON</button>
+    <button class="btn-restart" onclick="restart()">↺ New Plan</button>
+  </div>
+
+  <button class="json-toggle" onclick="toggleJSON()">VIEW RAW JSON</button>
+  <div class="json-block" id="json-out"></div>
+
+</div>
+</main>
+
+<script>
+// ══════════════════════════════════════════════════════
+// PROMPT LAYER ARCHITECTURE
+// Layer 1: CORE (shared, ~280 tokens)
+// Layer 2: AGENT IDENTITY (small, agent-specific)
+// Layer 3: TASK (dynamic per round)
+// ══════════════════════════════════════════════════════
+
+const CORE = `You are a specialist agent in the Intelligent Family Ventures system — a 7-agent AI platform that builds personalized family venture plans.
+
+UNIVERSAL RULES:
+- Every sentence must reference the client's exact words or numbers
+- Write in second person ("you", "your family", "your venture")
+- Cite at least one direct quote per output
+- State your position boldly — no excessive hedging
+- Return ONLY valid JSON — absolutely nothing else outside the JSON object
+- Always connect analysis to launching a real family venture
+
+THE 7 SURVEY QUESTIONS:
+Q1: Household description, 2-3 core values, life stage
+Q2: ONE biggest challenge or stressor + duration
+Q3: Specific financial milestone + one life/legacy change in 3-5 years
+Q4: Where time/energy/money actually goes vs. where they wish it went
+Q5: Confidence score 1-10 for launching a joint venture + what raises it 3 points
+Q6: Single first action they'd realistically take + what might stop them
+Q7: What the family knows how to do better than most people (unfair advantage)`;
+
+const SPECIALIST_SCHEMA = `Return ONLY a JSON object:
+{"agent":"<name>","bias":"<2-3 words>","finding":"<one bold declarative sentence>","analysis":"<150-220 words specific to their answers>","client_citation":"<exact quote from their answers>","watch":"<one blind spot in your own analysis>","disagrees_with":"<agent name>","challenge_point":"<specific claim you expect them to make that is incomplete>"}`;
+
+// OPTIMIZED: Debate engine handles BOTH sides in ONE call (3 calls not 6)
+const DEBATE_SCHEMA = `Return ONLY a JSON object with both rebuttals:
+{"conflict":"<tension name>","agent_a_rebuttal":{"agent":"<name>","their_claim":"<opponent core finding>","your_rebuttal":"<2-4 sentences>","what_you_concede":"<honest concession>","what_you_hold":"<point you won't move on>","condition_to_be_wrong":"<what would make opponent more right>"},"agent_b_rebuttal":{"agent":"<name>","their_claim":"<opponent core finding>","your_rebuttal":"<2-4 sentences>","what_you_concede":"<honest concession>","what_you_hold":"<point you won't move on>","condition_to_be_wrong":"<what would make opponent more right>"}}`;
+
+const NARRATOR_SCHEMA = `Return ONLY a JSON object:
+{
+  "narrator_letter":"<3 paragraphs separated by \\n\\n, 80-100 words each, warm+direct, second person>",
+  "throughline":"<one sentence: the single defining tension in this family's situation>",
+  "scores":{"venture_readiness":<0-100>,"opportunity_strength":<0-100>,"execution_confidence":<0-100>,"family_alignment":<0-100>},
+  "family_portrait":{"household":"<from Q1>","life_stage":"<one phrase>","pain_point":"<primary challenge>","urgency":"<how long unresolved>","3yr_number":"<specific number>","3yr_change":"<life change>","behavior_gap":"<gap between actual and intended>","confidence":"<their number only>","first_action":"<what they'd do>","blocker":"<what would stop them>","unfair_advantage":"<from Q7>"},
+  "venture_ideas":[{"path":"CONSERVATIVE","idea":"<venture name>","roles":["<person>: <role>"],"revenue_model":"<one sentence with specific numbers>","why_it_fits":"<why this family + idea = match based on Q7>","first_milestone":"<90-day milestone>"},{"path":"BALANCED","idea":"<venture name>","roles":["<person>: <role>"],"revenue_model":"<one sentence with specific numbers>","why_it_fits":"<why this fits>","first_milestone":"<90-day milestone>"},{"path":"AGGRESSIVE","idea":"<venture name>","roles":["<person>: <role>"],"revenue_model":"<one sentence with specific numbers>","why_it_fits":"<why this fits>","first_milestone":"<90-day milestone>"}],
+  "verdicts":[{"tension":"Foundation vs. Urgency","verdict_type":"TYPE I, II, or III","verdict_type_label":"<Both True Different Timeframes / Both True Different Domains / Genuine Choice Required>","text":"<80-120 words second person>"},{"tension":"Ambition vs. Behavior","verdict_type":"<type>","verdict_type_label":"<label>","text":"<80-120 words>"},{"tension":"Protection vs. Momentum","verdict_type":"<type>","verdict_type_label":"<label>","text":"<80-120 words>"}],
+  "actions_90":[{"phase":"DAYS 1-30","title":"<3-5 words>","what":"<specific action>","why":"<one sentence>","metric":"<measurable output>"},{"phase":"DAYS 31-60","title":"<3-5 words>","what":"<builds on phase 1>","why":"<one sentence>","metric":"<measurable output>"},{"phase":"DAYS 61-90","title":"<3-5 words>","what":"<first venture action with safeguard>","why":"<one sentence>","metric":"<measurable output>"}],
+  "roadmap":[{"year_title":"YEAR 1 — <4-6 word theme>","year_desc":"<2-3 sentences specific to this family>","milestones":["<m1>","<m2>","<m3>","<m4>"]},{"year_title":"YEAR 2 — <theme>","year_desc":"<2-3 sentences>","milestones":["<m1>","<m2>","<m3>","<m4>"]},{"year_title":"YEAR 3 — <theme>","year_desc":"<2-3 sentences>","milestones":["<m1>","<m2>","<m3>","<m4>"]}],
+  "risks":[{"level":"HIGH","name":"<risk>","description":"<specific to this family>","mitigation":"<concrete action>"},{"level":"HIGH","name":"<risk>","description":"<specific>","mitigation":"<concrete>"},{"level":"MEDIUM","name":"<risk>","description":"<specific>","mitigation":"<concrete>"},{"level":"LOW","name":"<risk>","description":"<specific>","mitigation":"<concrete>"}]
+}`;
+
+// Layer 2: Agent identities (lean)
+const AGENT_ID = {
+  architect:`AGENT: Family Architect | BIAS: Possibility & Hidden Strength
+BELIEF: Every family has more structural strength than they acknowledge. Find it and show how it becomes the venture foundation.
+PRIMARY INPUTS: Q1 (household+values+stage) + Q3 (legacy vision) + Q7 (unfair advantage)
+CHALLENGE: Crisis Diagnostician — they will overweight problems. Counter with specific assets.
+RULES: Name ≥1 structural strength from Q1. Connect Q3 to Q7 unfair advantage. Show the venture opportunity hiding in their household description.
+${SPECIALIST_SCHEMA}`,
+
+  diagnostician:`AGENT: Crisis Diagnostician | BIAS: Urgency
+BELIEF: Most families underestimate the cost of inaction — especially when trying to launch a venture.
+PRIMARY INPUTS: Q2 (stressor+duration) + Q4 (behavior gap) + Q5 (confidence)
+CHALLENGE: Family Architect — they romanticize foundation. Counter with the compounding cost of delay.
+RULES: Estimate cost of Q2 continuing 12 more months. Name the specific consequence for their venture timeline. Acknowledge one genuine strength from Q1 before closing.
+${SPECIALIST_SCHEMA}`,
+
+  strategist:`AGENT: Goals Strategist | BIAS: Ambition
+BELIEF: Families almost always underestimate what 3-5 focused years can produce with a clear venture goal.
+PRIMARY INPUTS: Q3 (milestone+legacy) + Q1 (resources) + Q7 (unfair advantage)
+CHALLENGE: Pattern Analyst — they mistake absence of system for absence of capacity.
+RULES: Evaluate Q3 specificity — if it's a range demand the number. Check Q3 milestone and legacy change are internally consistent. Name one implied venture goal they haven't stated. Connect Q7 unfair advantage to Q3 vision.
+${SPECIALIST_SCHEMA}`,
+
+  analyst:`AGENT: Pattern Analyst | BIAS: Behavioral Reality
+BELIEF: The gap between what families say they want and what the last 6-12 months show is where most ventures die before launch.
+PRIMARY INPUTS: Q4 (actual vs intended) + Q6 (first action + real blocker)
+CHALLENGE: Goals Strategist — goals set without understanding the blocking pattern will be abandoned at first resistance.
+RULES: Name the SPECIFIC gap from Q4. Connect Q4 pattern directly to Q6 blocker — they are almost always the same pattern. Acknowledge one area where behavior IS consistent. End with what structural change (not motivational) would shift the pattern.
+${SPECIALIST_SCHEMA}`,
+
+  profiler:`AGENT: Risk Profiler | BIAS: Protection
+BELIEF: Every family venture has one structural vulnerability that, if ignored, unravels everything.
+PRIMARY INPUTS: Q5 (confidence + what raises it) + Q2 (stressor) + Q3 (goal) + Q7 (unfair advantage)
+CHALLENGE: Action Prioritizer — moving fast on an unchecked vulnerability creates compounding exposure.
+RULES: Name ONE specific structural vulnerability — the most dangerous, not a list. Connect it to their actual answers. If Q3 or Q7 involves licensed/regulated activity, flag as HIGH risk. Provide one concrete implementable mitigation. NOT allowed to say "do nothing until all risk resolved."
+${SPECIALIST_SCHEMA}`,
+
+  prioritizer:`AGENT: Action Prioritizer | BIAS: Momentum
+BELIEF: A perfect plan not executed is worthless. One first action unlocks everything else.
+PRIMARY INPUTS: Q6 (first action + real blocker) + Q4 (behavior gap) + Q7 (unfair advantage)
+CHALLENGE: Crisis Diagnostician (paralysis) + Risk Profiler (over-caution).
+RULES: Validate OR reframe Q6 first action. Name the REAL blocker beneath the stated one. Define "done" specifically — observable output. Sequence three steps showing what the first action unlocks. Connect to Q7 — how does their unfair advantage make the first step easier?
+${SPECIALIST_SCHEMA}`
+};
+
+const DEBATE_AGENTS = {
+  pair1:{ name:"Foundation vs. Urgency", a:"Family Architect", b:"Crisis Diagnostician", ka:"architect", kb:"diagnostician" },
+  pair2:{ name:"Ambition vs. Behavior",  a:"Goals Strategist",  b:"Pattern Analyst",      ka:"strategist",  kb:"analyst" },
+  pair3:{ name:"Protection vs. Momentum",a:"Risk Profiler",     b:"Action Prioritizer",   ka:"profiler",    kb:"prioritizer" }
+};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let survey={}, r1={}, r2={}, narr={}, obsLog=[], selectedPath='BALANCED';
+
+// ══════════════════════════════════════════════════════
+// OBSERVABILITY
+// ══════════════════════════════════════════════════════
+function log(msg, type='info'){
+  const ts = new Date().toISOString().substr(11,8);
+  obsLog.push({ts, msg, type});
+  const el = document.getElementById('obs-log');
+  const cls = type==='ok'?'log-ok':type==='err'?'log-err':type==='warn'?'log-warn':'';
+  el.innerHTML += `<span class="${cls}">[${ts}] ${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+function toggleLog(){
+  const el=document.getElementById('obs-log');
+  const btn=document.querySelector('.obs-toggle');
+  const show=el.style.display==='block';
+  el.style.display=show?'none':'block';
+  btn.textContent=(show?'▸ SHOW':'▾ HIDE')+' PIPELINE LOG';
+}
+
+// ══════════════════════════════════════════════════════
+// API — WITH JSON REPAIR LAYER
+// ══════════════════════════════════════════════════════
+async function callClaude(system, user, maxTokens=1400){
+  const t0 = performance.now();
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:maxTokens,
+      system, messages:[{role:"user",content:user}]
+    })
+  });
+  if(!res.ok){
+    const e=await res.json();
+    throw new Error(e.error?.message||`HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  const rawText = data.content.map(b=>b.text||"").join("");
+  const latency = Math.round(performance.now()-t0);
+
+  // ── JSON REPAIR LAYER ──────────────────────────────
+  let parsed;
+  try {
+    parsed = parseJSON(rawText);
+    log(`✓ parsed (${latency}ms, ~${Math.round(rawText.length/4)} tokens)`,'ok');
+    return parsed;
+  } catch(e1) {
+    log(`⚠ JSON malformed — attempting repair...`,'warn');
+    // One automatic repair attempt
+    try {
+      const repairRes = await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:maxTokens,
+          system:"You fix broken JSON. Return ONLY valid JSON. Nothing else. No explanation.",
+          messages:[{role:"user",content:`Fix this broken JSON and return only the corrected version:\n\n${rawText}`}]
+        })
+      });
+      const repairData = await repairRes.json();
+      const repairText = repairData.content.map(b=>b.text||"").join("");
+      parsed = parseJSON(repairText);
+      log(`✓ JSON repaired successfully`,'ok');
+      return parsed;
+    } catch(e2) {
+      log(`✗ JSON repair failed: ${e2.message}`,'err');
+      throw new Error(`JSON parse failed after repair attempt: ${e1.message}`);
+    }
+  }
+}
+
+function parseJSON(text){
+  const clean = text.replace(/```json\s*/gi,"").replace(/```\s*/g,"").trim();
+  try { return JSON.parse(clean); } catch {
+    const m = clean.match(/\{[\s\S]*\}/);
+    if(m) return JSON.parse(m[0]);
+    throw new Error("No JSON object found");
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════
+function setAgent(key, status, preview=""){
+  const c=document.getElementById(`c-${key}`);
+  const s=document.getElementById(`s-${key}`);
+  const p=document.getElementById(`p-${key}`);
+  if(!c||!s) return;
+  c.className=`a-card ${status}`;
+  s.className=`a-status s-${status==='error'?'err':status==='running'?'run':status==='done'?'done':'wait'}`;
+  const labels={waiting:"WAITING",running:"ANALYZING",done:"COMPLETE",error:"ERROR"};
+  s.textContent=labels[status]||status.toUpperCase();
+  if(status==='running') s.innerHTML=`<span class="spin">◌</span> ANALYZING`;
+  if(preview && p) p.textContent=preview;
+}
+function setPair(n, status, text){
+  const c=document.getElementById(`pair-${n}`);
+  const s=document.getElementById(`ps-${n}`);
+  if(!c||!s) return;
+  c.className=`pair-card ${status}`;
+  s.className=`pair-status${status==='done'?' ok':status==='error'?' err':''}`;
+  s.textContent=text;
+}
+function setNarrator(status, text){
+  const c=document.getElementById('nar-card');
+  const s=document.getElementById('s-nar');
+  const sub=document.getElementById('nar-sub');
+  if(c) c.className=`narrator-wrap ${status}`;
+  if(s){
+    const labels={waiting:"WAITING",running:"SYNTHESIZING",done:"COMPLETE",error:"ERROR"};
+    s.textContent=labels[status]||"";
+    s.className=`a-status s-${status==='running'?'run':status==='done'?'done':status==='error'?'err':'wait'}`;
+    if(status==='running') s.innerHTML=`<span class="spin">◌</span> SYNTHESIZING`;
+  }
+  if(sub) sub.textContent=text;
+}
+function setProgress(pct, label){
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-lbl').textContent=label;
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════════════
+// VALIDATION
+// ══════════════════════════════════════════════════════
+function validate(){
+  const fields=[
+    ['cn','Client Name'],['q1','Question 1'],['q2','Question 2'],
+    ['q3','Question 3'],['q4','Question 4'],['q5','Question 5'],
+    ['q6','Question 6'],['q7','Question 7']
+  ];
+  for(const [id,label] of fields){
+    const el=document.getElementById(id);
+    if(!el||el.value.trim().length<8){
+      const err=document.getElementById('surv-err');
+      err.style.display='block';
+      err.textContent=`Please complete "${label}" with more detail before generating.`;
+      el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'});
+      return false;
+    }
+  }
+  document.getElementById('surv-err').style.display='none';
+  return true;
+}
+
+// ══════════════════════════════════════════════════════
+// MAIN PIPELINE — OPTIMIZED (10 calls total)
+// Round 1: 6 parallel specialist calls
+// Round 2: 3 debate engine calls (BOTH sides per call)
+// Round 3: 1 Narrator call
+// ══════════════════════════════════════════════════════
+async function startPipeline(){
+  if(!validate()) return;
+  document.getElementById('btn-gen').disabled=true;
+
+  survey={
+    clientName: document.getElementById('cn').value.trim(),
+    q1:document.getElementById('q1').value.trim(),
+    q2:document.getElementById('q2').value.trim(),
+    q3:document.getElementById('q3').value.trim(),
+    q4:document.getElementById('q4').value.trim(),
+    q5:document.getElementById('q5').value.trim(),
+    q6:document.getElementById('q6').value.trim(),
+    q7:document.getElementById('q7').value.trim(),
+  };
+
+  const sq=`CLIENT: ${survey.clientName}
+Q1 (Household+Values+Stage): ${survey.q1}
+Q2 (Biggest Challenge): ${survey.q2}
+Q3 (3-5yr Vision): ${survey.q3}
+Q4 (Actual vs Intended): ${survey.q4}
+Q5 (Confidence): ${survey.q5}
+Q6 (First Action): ${survey.q6}
+Q7 (Unfair Advantage): ${survey.q7}`;
+
+  showScreen('scr-proc');
+  log('Pipeline started — 10 calls total (optimized from 13)');
+
+  try {
+    // ── ROUND 1: 6 parallel ──────────────────────────
+    setProgress(4,'ROUND 01 — LAUNCHING 6 AGENTS IN PARALLEL');
+    const agentKeys=['arch','diag','strat','anal','prof','prio'];
+    const agentFull={arch:'architect',diag:'diagnostician',strat:'strategist',
+                     anal:'analyst',prof:'profiler',prio:'prioritizer'};
+
+    agentKeys.forEach(k=>setAgent(k,'running'));
+    log('Round 1: 6 agents running in parallel...');
+
+    let done1=0;
+    const r1ps = agentKeys.map(async k=>{
+      const full=agentFull[k];
+      try {
+        const result=await callClaude(
+          `${CORE}\n\n${AGENT_ID[full]}`,
+          `Analyze these survey answers and return your JSON:\n\n${sq}`
+        );
+        r1[full]=result;
+        setAgent(k,'done', result.finding||'Analysis complete.');
+        log(`  ✓ ${full}: "${(result.finding||'').substring(0,60)}..."`, 'ok');
+      } catch(e) {
+        r1[full]={finding:`Analysis error`,analysis:e.message,error:true};
+        setAgent(k,'error');
+        log(`  ✗ ${full}: ${e.message}`, 'err');
+      }
+      done1++;
+      setProgress(4+(done1/6)*38, `ROUND 01 — ${done1}/6 AGENTS COMPLETE`);
+    });
+    await Promise.all(r1ps);
+    setProgress(44,'ROUND 01 COMPLETE — INITIATING DEBATE ENGINE');
+    log('Round 1 complete. Starting debate engine (3 calls)...');
+    await sleep(500);
+
+    // ── ROUND 2: 3 debate calls (BOTH sides per call) ─
+    setProgress(46,'ROUND 02 — DEBATE ENGINE (OPTIMIZED: 3 CALLS)');
+    const pairDefs=[
+      {n:1,k:'pair1',system:`${CORE}\n\nDEBATE ENGINE — You receive two agent analyses and produce structured rebuttals for BOTH agents simultaneously.`},
+      {n:2,k:'pair2',system:`${CORE}\n\nDEBATE ENGINE — You receive two agent analyses and produce structured rebuttals for BOTH agents simultaneously.`},
+      {n:3,k:'pair3',system:`${CORE}\n\nDEBATE ENGINE — You receive two agent analyses and produce structured rebuttals for BOTH agents simultaneously.`},
+    ];
+
+    pairDefs.forEach(p=>setPair(p.n,'running','Agents reading each other...'));
+    let done2=0;
+
+    const r2ps = pairDefs.map(async({n,k,system})=>{
+      const pair=DEBATE_AGENTS[k];
+      try {
+        const prompt=`CONFLICT: "${pair.name}"
+AGENT A (${pair.a}) ROUND 1 OUTPUT: ${JSON.stringify(r1[pair.ka],null,2)}
+AGENT B (${pair.b}) ROUND 1 OUTPUT: ${JSON.stringify(r1[pair.kb],null,2)}
+CLIENT SURVEY: ${sq}
+
+Produce rebuttals for BOTH agents. Each must cite the client's exact words.
+${DEBATE_SCHEMA}`;
+        const result=await callClaude(system, prompt, 1600);
+        r2[k]=result;
+        setPair(n,'done','✓ DEBATE RESOLVED');
+        log(`  ✓ Conflict ${n} (${pair.name}) resolved`, 'ok');
+      } catch(e) {
+        r2[k]={error:e.message};
+        setPair(n,'error','Error: '+e.message);
+        log(`  ✗ Conflict ${n}: ${e.message}`, 'err');
+      }
+      done2++;
+      setProgress(46+(done2/3)*28, `ROUND 02 — ${done2}/3 DEBATES COMPLETE`);
+    });
+    await Promise.all(r2ps);
+    setProgress(76,'ROUND 02 COMPLETE — NARRATOR SYNTHESIZING');
+    log('Debates complete. Narrator synthesizing...');
+    await sleep(500);
+
+    // ── ROUND 3: Narrator (1 call) ───────────────────
+    setNarrator('running','Reading all 6 findings + 3 debate resolutions...');
+    log('Round 3: Narrator synthesis (1 call, summarized inputs)...');
+
+    // OPTIMIZATION: Summarize agent outputs before injection (reduces narrator token load)
+    const agentSummaries = Object.entries(r1).map(([k,v])=>
+      `${k.toUpperCase()}: FINDING="${v.finding||''}" | WATCH="${v.watch||''}" | CHALLENGE="${v.challenge_point||''}"`
+    ).join('\n');
+
+    const debateSummaries = Object.entries(r2).map(([k,v])=>{
+      const pair=DEBATE_AGENTS[k];
+      if(v.error) return `${pair.name}: DEBATE ERROR`;
+      const a=v.agent_a_rebuttal||{};
+      const b=v.agent_b_rebuttal||{};
+      return `${pair.name}:
+  ${pair.a} HOLDS: "${a.what_you_hold||''}" CONCEDES: "${a.what_you_concede||''}"
+  ${pair.b} HOLDS: "${b.what_you_hold||''}" CONCEDES: "${b.what_you_concede||''}"`;
+    }).join('\n');
+
+    const narratorUser=`CLIENT SURVEY:
+${sq}
+
+ROUND 1 — AGENT FINDINGS (SUMMARIZED):
+${agentSummaries}
+
+ROUND 2 — DEBATE RESOLUTIONS:
+${debateSummaries}
+
+FULL AGENT OUTPUTS FOR DEEP REFERENCE:
+${JSON.stringify(r1,null,2)}
+
+Synthesize everything. Build 3 venture ideas tied directly to Q7 (unfair advantage). Include all scores, verdicts, 90-day actions, roadmap, and risks.
+${NARRATOR_SCHEMA}`;
+
+    const narratorSystem=`${CORE}
+
+YOU ARE: The Narrator — the 7th agent whose bias is The Client's Dignity.
+BELIEF: Six experts told the truth from six angles. Your job is to hold every tension and write one document that feels like a trusted advisor who has known this family for years.
+STEPS: 1) Find throughline 2) Resolve debates (use Type III when genuine choice exists — do NOT force false consensus) 3) Write Narrator Letter (3 paragraphs) 4) Generate 3 venture ideas from Q7 unfair advantage 5) Build full payload.
+VOICE: Second person, present tense, never "journey", never "financial wellness", never "holistic", active voice always.`;
+
+    narr=await callClaude(narratorSystem, narratorUser, 3200);
+    narr.client_name=survey.clientName;
+    narr.raw_agent_outputs=r1;
+    narr.raw_debate_outputs=r2;
+    narr.survey=survey;
+    narr.pipeline_log=obsLog;
+
+    setNarrator('done','Synthesis complete. Plan ready.');
+    setProgress(100,'COMPLETE — YOUR PLAN IS READY');
+    log('✓ Plan generated successfully. Rendering results...','ok');
+
+    await sleep(900);
+    renderResults();
+    showScreen('scr-res');
+
+  } catch(err) {
+    log(`✗ PIPELINE FAILED: ${err.message}`,'err');
+    const e=document.getElementById('proc-err');
+    e.style.display='block';
+    e.textContent=`Pipeline error: ${err.message}`;
+    setProgress(0,'ERROR — SEE LOG ABOVE');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER RESULTS
+// ══════════════════════════════════════════════════════
+function renderResults(){
+  const N=narr;
+  document.getElementById('res-title').textContent=`${survey.clientName} — Plan Ready`;
+  document.getElementById('res-sub').textContent=`7 agents · 3 debates · 3 venture paths · built from your exact words`;
+
+  // ── SCORES ──────────────────────────────────────────
+  const sc=N.scores||{venture_readiness:70,opportunity_strength:72,execution_confidence:62,family_alignment:74};
+  const scoreLabels={venture_readiness:'VENTURE READINESS',opportunity_strength:'OPPORTUNITY',
+                     execution_confidence:'EXECUTION',family_alignment:'ALIGNMENT'};
+  document.getElementById('scores-row').innerHTML=Object.entries(sc).map(([k,v])=>`
+    <div class="score-box">
+      <div class="score-val">${v}</div>
+      <div class="score-lbl">${scoreLabels[k]||k}</div>
+      <div class="score-bar-track"><div class="score-bar-fill" style="width:${v}%"></div></div>
+    </div>`).join('');
+
+  // ── THROUGHLINE ──────────────────────────────────────
+  document.getElementById('res-throughline').textContent=N.throughline||'Your plan has been synthesized.';
+
+  // ── NARRATOR LETTER ──────────────────────────────────
+  const letter=document.getElementById('res-letter');
+  letter.innerHTML=(N.narrator_letter||'').split('\n\n').filter(Boolean)
+    .map(p=>`<p>${p}</p>`).join('');
+
+  // ── VENTURE IDEAS ────────────────────────────────────
+  const vi=N.venture_ideas||[];
+  const pathColors={CONSERVATIVE:'cons',BALANCED:'bal',AGGRESSIVE:'agg'};
+  document.getElementById('res-ventures').innerHTML=vi.map(v=>`
+    <div class="venture-card">
+      <div class="v-path-badge ${pathColors[v.path]||'bal'}">${v.path||'BALANCED'} PATH</div>
+      <div class="v-name">${v.idea||''}</div>
+      <div class="v-revenue">${v.revenue_model||''}</div>
+      <ul class="v-roles">${(v.roles||[]).map(r=>`<li>${r}</li>`).join('')}</ul>
+      <div class="v-why">${v.why_it_fits||''}</div>
+      ${v.first_milestone?`<div class="act-metric" style="margin-top:10px">◆ 90-DAY: ${v.first_milestone}</div>`:''}
+    </div>`).join('');
+
+  // ── THREE PATHS ──────────────────────────────────────
+  const paths=[
+    {key:'CONSERVATIVE',label:'cons',name:'Conservative Path',
+     desc:'Lower risk, lower capital. Build proof of concept with one revenue stream before expanding.'},
+    {key:'BALANCED',label:'bal',name:'Balanced Path',
+     desc:'Two parallel streams. One generates cash flow now, one builds the long-term asset.'},
+    {key:'AGGRESSIVE',label:'agg',name:'Aggressive Path',
+     desc:'Full system from day one. Higher capital requirement. 3x upside if executed cleanly.'},
+  ];
+  document.getElementById('res-paths').innerHTML=paths.map(p=>`
+    <div class="path-card${p.key===selectedPath?' selected':''}" onclick="selectPath('${p.key}', this)">
+      <div class="path-badge ${p.label}">${p.key}</div>
+      <div class="path-name">${p.name}</div>
+      <div class="path-desc">${p.desc}</div>
+    </div>`).join('');
+
+  // ── AGENT FINDINGS ───────────────────────────────────
+  const meta={architect:{icon:'🏛',color:'#2E86C1'},diagnostician:{icon:'⚡',color:'#C0392B'},
+    strategist:{icon:'🎯',color:'#1E8449'},analyst:{icon:'🔍',color:'#B7950B'},
+    profiler:{icon:'🛡',color:'#7D3C98'},prioritizer:{icon:'🚀',color:'#1A5276'}};
+  const names={architect:'Family Architect',diagnostician:'Crisis Diagnostician',
+    strategist:'Goals Strategist',analyst:'Pattern Analyst',
+    profiler:'Risk Profiler',prioritizer:'Action Prioritizer'};
+
+  document.getElementById('res-findings').innerHTML=Object.entries(r1).map(([k,v])=>{
+    const m=meta[k]||{icon:'●',color:'#C9A84C'};
+    return `<div class="find-card" style="--ca:${m.color}">
+      <div class="find-head">
+        <span style="font-size:17px">${m.icon}</span>
+        <span class="find-agent">${names[k]||k}</span>
+        <span class="find-bias">${v.bias||''}</span>
+      </div>
+      <div class="find-txt">${v.finding||''}</div>
+      <div class="find-analysis">${(v.analysis||'').substring(0,300)}${(v.analysis||'').length>300?'...':''}</div>
+      ${v.client_citation?`<div class="find-citation">"${v.client_citation}"</div>`:''}
+    </div>`;
+  }).join('');
+
+  // ── VERDICTS ─────────────────────────────────────────
+  document.getElementById('res-verdicts').innerHTML=(N.verdicts||[]).map(v=>`
+    <div class="verdict-card">
+      <div class="v-type">${v.verdict_type||''} · ${v.verdict_type_label||''}</div>
+      <div class="v-tension">${v.tension||''}</div>
+      <div class="v-text">${v.text||''}</div>
+    </div>`).join('');
+
+  // ── 90-DAY ACTIONS ───────────────────────────────────
+  document.getElementById('res-actions').innerHTML=(N.actions_90||[]).map((a,i)=>`
+    <div class="act-card">
+      <div class="act-num">0${i+1}</div>
+      <div>
+        <div class="act-phase">${a.phase||''}</div>
+        <div class="act-title">${a.title||''}</div>
+        <div class="act-body"><strong>What:</strong> ${a.what||''}</div>
+        <div class="act-body"><strong>Why:</strong> ${a.why||''}</div>
+        <div class="act-metric">✓ ${a.metric||''}</div>
+      </div>
+    </div>`).join('');
+
+  // ── ROADMAP ──────────────────────────────────────────
+  document.getElementById('res-roadmap').innerHTML=(N.roadmap||[]).map(y=>`
+    <div class="rm-card">
+      <div class="rm-title">${y.year_title||''}</div>
+      <div class="rm-desc">${y.year_desc||''}</div>
+      <ul class="rm-milestones">${(y.milestones||[]).map(m=>`<li>${m}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  // ── RISKS ────────────────────────────────────────────
+  const tbody=document.querySelector('#res-risks tbody');
+  tbody.innerHTML=(N.risks||[]).map(r=>`
+    <tr>
+      <td class="risk-${r.level==='HIGH'?'high':r.level==='MEDIUM'?'med':'low'}">${r.level||''}</td>
+      <td><div class="risk-name">${r.name||''}</div><div>${r.description||''}</div></td>
+      <td>${r.mitigation||''}</td>
+    </tr>`).join('');
+
+  // Raw JSON
+  document.getElementById('json-out').textContent=JSON.stringify(N,null,2);
+}
+
+// ══════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════
+function selectPath(key, el){
+  selectedPath=key;
+  document.querySelectorAll('.path-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function toggleJSON(){
+  const el=document.getElementById('json-out');
+  const btn=document.querySelector('.json-toggle');
+  const show=el.style.display==='block';
+  el.style.display=show?'none':'block';
+  btn.textContent=(show?'VIEW':'HIDE')+' RAW JSON';
+}
+function downloadJSON(){
+  const blob=new Blob([JSON.stringify(narr,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`${(survey.clientName||'family').replace(/\s+/g,'_')}_venture_plan.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function restart(){
+  r1={};r2={};narr={};obsLog=[];
+  document.getElementById('btn-gen').disabled=false;
+  document.getElementById('obs-log').innerHTML='';
+  ['arch','diag','strat','anal','prof','prio'].forEach(k=>{
+    setAgent(k,'waiting');
+    const p=document.getElementById(`p-${k}`);
+    if(p) p.textContent='';
+  });
+  [1,2,3].forEach(n=>setPair(n,'','Waiting for Round 1...'));
+  setNarrator('waiting','Waiting for all agents...');
+  setProgress(0,'INITIALIZING');
+  showScreen('scr-survey');
+}
+</script>
+</body>
+</html>
